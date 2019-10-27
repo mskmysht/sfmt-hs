@@ -28,11 +28,10 @@ dependencies:
 - bytestring >=0.10 && <0.11
 - entropy    >=0.3  && <0.5
 
-extra-include-dirs:
-- SFMT-src-1.4.1
-
 library:
   source-dirs: ./
+  include-dirs:
+  - SFMT-src-1.4.1
   c-sources:
   - SFMT-src-1.4.1/SFMT.c
   - cbits/wrap.c
