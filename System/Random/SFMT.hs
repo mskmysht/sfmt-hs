@@ -1,11 +1,11 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE UnboxedTuples #-}
 {-# LANGUAGE CPP #-}
 
 module System.Random.SFMT
     ( -- * Gen
       Gen
+    , MonadGen
     , initializeFromSeed, create, initialize, initializeFromByteString
     , withSystemRandom, createSystemRandom
       -- ** Type helpers
@@ -49,33 +49,35 @@ newtype Gen s = Gen (ForeignPtr SFMT)
 instance Show (Gen s) where
     show = unsafePerformIO . getIDString
 
+type MonadGen m = Gen (PrimState m)
+
 getIDString :: Gen s -> IO String
 getIDString (Gen gen) = withForeignPtr gen $ \ptr ->
     sfmt_get_idstring ptr >>= peekCString
 
-initializeFromSeed :: PrimMonad m => Int -> m (Gen (PrimState m))
+initializeFromSeed :: PrimMonad m => Int -> m (MonadGen m)
 initializeFromSeed seed = unsafePrimToPrim $ do
     bytes <- mallocBytes sizeOfSFMT
     sfmt_init_gen_rand bytes (fromIntegral seed)
     Gen `liftM` newForeignPtr finalizerFree bytes
 
-create :: PrimMonad m => m (Gen (PrimState m))
+create :: PrimMonad m => m (MonadGen m)
 create = initializeFromSeed 0
 
-initialize :: (PrimMonad m, F.Foldable f) => f Word -> m (Gen (PrimState m))
+initialize :: (PrimMonad m, F.Foldable f) => f Word -> m (MonadGen m)
 initialize v = unsafePrimToPrim . withArray (unsafeCoerce $ F.toList v) $ \ptr -> do
     bytes <- mallocBytes sizeOfSFMT
     let len = F.foldl' (\i _ -> i + 1) 0 v
     sfmt_init_by_array bytes ptr len
     Gen `liftM` newForeignPtr finalizerFree bytes
 
-initializeFromByteString :: PrimMonad m => S.ByteString -> m (Gen (PrimState m))
+initializeFromByteString :: PrimMonad m => S.ByteString -> m (MonadGen m)
 initializeFromByteString bs = unsafePrimToPrim . S.unsafeUseAsCStringLen bs $ \(ptr, len) -> do
     bytes <- mallocBytes sizeOfSFMT
     sfmt_init_by_array bytes (castPtr ptr) (fromIntegral $ len `quot` 4)
     Gen `liftM` newForeignPtr finalizerFree bytes
 
-withSystemRandom :: PrimBase m => (Gen (PrimState m) -> m a) -> IO a
+withSystemRandom :: PrimBase m => (MonadGen m -> m a) -> IO a
 withSystemRandom m = do
     bs  <- getEntropy (constSFMT_N * 16)
     gen <- initializeFromByteString bs
@@ -84,8 +86,8 @@ withSystemRandom m = do
 createSystemRandom :: IO GenIO
 createSystemRandom = withSystemRandom (return :: GenIO -> IO GenIO)
 
-type GenIO   = Gen (PrimState IO)
-type GenST s = Gen (PrimState (ST s))
+type GenIO   = MonadGen IO
+type GenST s = MonadGen (ST s)
 
 asGenIO :: (GenIO -> IO a) -> GenIO -> IO a
 asGenIO = id
@@ -93,24 +95,24 @@ asGenIO = id
 asGenST :: (GenST s -> ST s a) -> GenST s -> ST s a
 asGenST = id
 
-genRand :: PrimMonad m => (Ptr SFMT -> IO a) -> Gen (PrimState m) -> m a
+genRand :: PrimMonad m => (Ptr SFMT -> IO a) -> MonadGen m -> m a
 genRand f (Gen gen) = unsafePrimToPrim $ withForeignPtr gen f
 
-genRandWord32 :: PrimMonad m => Gen (PrimState m) -> m Word32
+genRandWord32 :: PrimMonad m => MonadGen m -> m Word32
 genRandWord32 g = fromIntegral `liftM` genRand wrap_genrand_uint32 g
 
-genRandWord64 :: PrimMonad m => Gen (PrimState m) -> m Word64
+genRandWord64 :: PrimMonad m => MonadGen m -> m Word64
 genRandWord64 g = fromIntegral `liftM` genRand wrap_genrand_uint64 g
 
-genRandReal2 :: PrimMonad m => Gen (PrimState m) -> m Float
+genRandReal2 :: PrimMonad m => MonadGen m -> m Float
 genRandReal2 g = realToFrac `liftM` genRand wrap_genrand_real2 g
 
-genRandRes53 :: PrimMonad m => Gen (PrimState m) -> m Double
+genRandRes53 :: PrimMonad m => MonadGen m -> m Double
 genRandRes53 g = realToFrac `liftM` genRand wrap_genrand_res53 g
 
 class Variate a where
-    uniform       :: PrimMonad m => Gen (PrimState m) -> m a
-    uniformR      :: PrimMonad m => (a, a) -> Gen (PrimState m) -> m a
+    uniform       :: PrimMonad m => MonadGen m -> m a
+    uniformR      :: PrimMonad m => (a, a) -> MonadGen m -> m a
 
 instance Variate Bool where
     uniform g = (\i -> i .&. 1 /= 0) `liftM` genRandWord32 g
@@ -228,7 +230,7 @@ instance (Variate a, Variate b, Variate c, Variate d) => Variate (a,b,c,d) where
 uniformRange :: forall m word a.
     (Variate word, Bounded word, Eq word, Num word, Integral word, Ord word
     , PrimMonad m, Variate a, Integral a, Show word)
-    => word -> (a, a) -> Gen (PrimState m) -> m a
+    => word -> (a, a) -> MonadGen m -> m a
 uniformRange _ = go
   where
     go (x1, x2) g
@@ -253,11 +255,11 @@ newtype Seed = Seed { unsafeFromSeed :: S.ByteString }
 unsafeToSeed :: S.ByteString -> Seed
 unsafeToSeed = Seed
 
-save :: PrimMonad m => Gen (PrimState m) -> m Seed
+save :: PrimMonad m => MonadGen m -> m Seed
 save (Gen gen) = unsafePrimToPrim . withForeignPtr gen $ \ptr ->
     Seed `liftM` S.packCStringLen (castPtr ptr, sizeOfSFMT)
 
-restore :: PrimMonad m => Seed -> m (Gen (PrimState m))
+restore :: PrimMonad m => Seed -> m (MonadGen m)
 restore (Seed bs) = unsafePrimToPrim . S.unsafeUseAsCString bs $ \ptr -> do
     bytes <- mallocBytes sizeOfSFMT
     copyBytes bytes (castPtr ptr) sizeOfSFMT
