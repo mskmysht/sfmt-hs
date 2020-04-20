@@ -7,7 +7,7 @@ module System.Random.SFMT
       Gen
     , MonadGen
     , initializeFromSeed, create, initialize, initializeFromByteString
-    , withSystemRandom, createSystemRandom
+    -- , withSystemRandom, createSystemRandom
       -- ** Type helpers
     , GenIO, GenST
     , asGenIO, asGenST
@@ -34,7 +34,7 @@ import Foreign.Marshal
 import qualified Data.Foldable as F
 import qualified Data.ByteString as S
 import qualified Data.ByteString.Unsafe as S
-import System.Entropy
+-- import System.Entropy
 import Data.Int
 import Data.Word
 import Data.Bits
@@ -77,14 +77,14 @@ initializeFromByteString bs = unsafePrimToPrim . S.unsafeUseAsCStringLen bs $ \(
     sfmt_init_by_array bytes (castPtr ptr) (fromIntegral $ len `quot` 4)
     Gen `liftM` newForeignPtr finalizerFree bytes
 
-withSystemRandom :: PrimBase m => (MonadGen m -> m a) -> IO a
-withSystemRandom m = do
-    bs  <- getEntropy (constSFMT_N * 16)
-    gen <- initializeFromByteString bs
-    unsafePrimToIO $ m (unsafeCoerce gen)
+-- withSystemRandom :: PrimBase m => (MonadGen m -> m a) -> IO a
+-- withSystemRandom m = do
+--     bs  <- getEntropy (constSFMT_N * 16)
+--     gen <- initializeFromByteString bs
+--     unsafePrimToIO $ m (unsafeCoerce gen)
 
-createSystemRandom :: IO GenIO
-createSystemRandom = withSystemRandom (return :: GenIO -> IO GenIO)
+-- createSystemRandom :: IO GenIO
+-- createSystemRandom = withSystemRandom (return :: GenIO -> IO GenIO)
 
 type GenIO   = MonadGen IO
 type GenST s = MonadGen (ST s)

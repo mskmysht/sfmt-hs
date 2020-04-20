@@ -28,5 +28,5 @@ main = do
     montePi 10000000 gen3 >>= print
     montePi 10000000 gen4 >>= print
     montePi 10000000 gen5 >>= print
-    withSystemRandom . asGenIO $ \gen6 ->
-        montePi 10000000 gen6 >>= print
+    -- withSystemRandom . asGenIO $ \gen6 ->
+    --     montePi 10000000 gen6 >>= print
