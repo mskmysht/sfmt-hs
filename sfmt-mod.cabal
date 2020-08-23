@@ -47,7 +47,7 @@ library
     , primitive >=0.5
   default-language: Haskell2010
 
-executable sfmt-mod-exe
+executable sfmt-hs-exe
   main-is: MonteCarlo.hs
   other-modules:
       Paths_sfmt_hs
