@@ -6,7 +6,7 @@ cabal-version: 1.12
 --
 -- hash: 37f79c952b13916a21e8d0db0e06f56d8d78dd41362a8bc406725a3e7f88e788
 
-name:           sfmt-mod
+name:           sfmt-hs
 version:        0.1.0.0
 description:    Please see the README on GitHub at <https://github.com/mskmysht/sfmt-hs#readme>
 homepage:       https://github.com/mskmysht/sfmt-hs#readme
@@ -33,7 +33,7 @@ library
       System.Random.SFMT
       System.Random.SFMT.Foreign
   other-modules:
-      Paths_sfmt_mod
+      Paths_sfmt_hs
   hs-source-dirs:
       ./
   include-dirs:
@@ -50,7 +50,7 @@ library
 executable sfmt-mod-exe
   main-is: MonteCarlo.hs
   other-modules:
-      Paths_sfmt_mod
+      Paths_sfmt_hs
   hs-source-dirs:
       examples
   ghc-options: -threaded -rtsopts -with-rtsopts=-N
@@ -58,5 +58,5 @@ executable sfmt-mod-exe
       base >=4.7 && <5
     , bytestring >=0.10 && <0.11
     , primitive >=0.5
-    , sfmt-mod
+    , sfmt-hs
   default-language: Haskell2010
