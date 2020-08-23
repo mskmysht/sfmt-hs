@@ -1,0 +1,62 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.31.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 37f79c952b13916a21e8d0db0e06f56d8d78dd41362a8bc406725a3e7f88e788
+
+name:           sfmt-mod
+version:        0.1.0.0
+description:    Please see the README on GitHub at <https://github.com/mskmysht/sfmt-hs#readme>
+homepage:       https://github.com/mskmysht/sfmt-hs#readme
+bug-reports:    https://github.com/mskmysht/sfmt-hs/issues
+author:         Masaaki Miyashita
+maintainer:     m.mysht118@gmail.com
+copyright:      2019 Masaaki Miyashtia, 2014 HirotomoMoriwaki
+license:        BSD3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    SFMT-src-1.4.1/SFMT.h
+    SFMT-src-1.4.1/SFMT-sse2.h
+    SFMT-src-1.4.1/SFMT-common.h
+    SFMT-src-1.4.1/SFMT-params.h
+    SFMT-src-1.4.1/SFMT-params19937.h
+
+source-repository head
+  type: git
+  location: https://github.com/mskmysht/sfmt-hs
+
+library
+  exposed-modules:
+      System.Random.SFMT
+      System.Random.SFMT.Foreign
+  other-modules:
+      Paths_sfmt_mod
+  hs-source-dirs:
+      ./
+  include-dirs:
+      SFMT-src-1.4.1
+  c-sources:
+      SFMT-src-1.4.1/SFMT.c
+      cbits/wrap.c
+  build-depends:
+      base >=4.7 && <5
+    , bytestring >=0.10 && <0.11
+    , primitive >=0.5
+  default-language: Haskell2010
+
+executable sfmt-mod-exe
+  main-is: MonteCarlo.hs
+  other-modules:
+      Paths_sfmt_mod
+  hs-source-dirs:
+      examples
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  build-depends:
+      base >=4.7 && <5
+    , bytestring >=0.10 && <0.11
+    , primitive >=0.5
+    , sfmt-mod
+  default-language: Haskell2010
