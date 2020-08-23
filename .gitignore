@@ -3,4 +3,4 @@ cabal.sandbox.config
 .cabal-sandbox/
 .stack-work/
 *~
-*.cabal
+# *.cabal
